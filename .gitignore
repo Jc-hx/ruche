@@ -1,0 +1,6 @@
+# PlatformIO
+.pio/
+.vscode/
+
+# Secrets (ne jamais versionner)
+include/secrets.h
