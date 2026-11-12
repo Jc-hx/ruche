@@ -3,26 +3,26 @@
 Mesure de la masse d'une ruche et envoi de sms quotidien.
 
 ## 1. Squelette du projet
-- [ ] Dépôt git initialisé
-- [ ] `platformio.ini` (carte, framework, `lib_deps`, vitesse du moniteur série)
-- [ ] `.gitignore` (dont `secrets.h` et `.pio/`)
+- [x] Dépôt git initialisé
+- [x] `platformio.ini` (carte, framework, `lib_deps`, vitesse du moniteur série)
+- [x] `.gitignore` (dont `secrets.h` et `.pio/`)
 - [ ] `include/config.h` : broches, heure d'envoi, seuil d'alerte (~100 g), fenêtre de temps, seuil batterie, calibrations en `TODO`
-- [ ] `include/secrets.h` + `secrets.h.example` (numéro admin)
-- [ ] Fichiers vides créés : `main`, `scale`, `modem`, `users`, `commands`
-- [ ] Le projet compile à vide
-- [ ] Premier commit
+- [x] `include/secrets.h` + `secrets.h.example` (numéro admin)
+- [x] Fichiers vides créés : `main`, `scale`, `modem`, `users`, `commands`
+- [x] Le projet compile à vide
+- [x] Premier commit
 
 ## 2. Balance (`scale`)
-- [ ] Lecture des 4 HX711
+- [x] Lecture des 4 HX711
 - [ ] Offset et facteur d'échelle par cellule (constantes de `config.h`)
-- [ ] Masse totale en grammes
-- [ ] Filtrage (médiane ou moyenne de plusieurs lectures)
+- [x] Masse totale en grammes
+- [x] Filtrage (médiane ou moyenne de plusieurs lectures)
 - [ ] Tare
 - [ ] Mise en veille des HX711 (`power_down` / `power_up`)
-- [ ] Test : la masse s'affiche sur le moniteur série
+- [x] Test : la masse s'affiche sur le moniteur série
 
 ## 3. Modem (`modem`)
-- [ ] Initialisation et attente de l'enregistrement réseau
+- [x] Initialisation et attente de l'enregistrement réseau
 - [ ] `sendSms(numéro, texte)`
 - [ ] Lecture d'un SMS entrant (numéro + texte) et suppression après lecture
 - [ ] Qualité du signal
@@ -57,8 +57,8 @@ Mesure de la masse d'une ruche et envoi de sms quotidien.
 - [ ] Test : poser et retirer une masse de ~100 g déclenche l'alerte
 
 ## 7. Heure fixe (sans RTC)
-- [ ] Activation de la mise à jour de l'heure réseau (`AT+CTZU=1`) et lecture (`AT+CCLK?`)
-- [ ] Conversion de l'heure en secondes depuis minuit
+- [x] Activation de la mise à jour de l'heure par ntp
+- [ ] Synchronisation tout les x redemarrages
 - [ ] Calcul du temps restant avant l'heure d'envoi
 - [ ] Sommeil par tranches de ~80 % du temps restant, puis relecture de l'heure
 - [ ] Fin de cycle en tranches courtes jusqu'à l'envoi

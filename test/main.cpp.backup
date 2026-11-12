@@ -1,0 +1,69 @@
+#include <Arduino.h>
+#include <SoftwareSerial.h>
+#include <config.h>
+
+#define MODEM_RX 10
+#define MODEM_TX 9
+#define MODEM_PWR 3
+
+SoftwareSerial modem(MODEM_RX, MODEM_TX);
+
+unsigned long lastSyncTime = 0;
+const unsigned long syncInterval = 300000; // 5 minutes en millisecondes
+
+// Envoie une commande AT et affiche la réponse pendant timeoutMs
+void sendAT(const char *cmd, unsigned long timeoutMs = 2000) {
+  Serial.print(F("> "));
+  Serial.println(cmd);
+  modem.println(cmd);
+  unsigned long start = millis();
+  while (millis() - start < timeoutMs) {
+    while (modem.available()) {
+      Serial.write(modem.read());
+    }
+  }
+  Serial.println();
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(MODEM_PWR, OUTPUT);
+  digitalWrite(MODEM_PWR, HIGH);
+  modem.begin(MODEM_BAUD);
+  delay(5000);
+
+  Serial.println(F("=== Initialisation A7670E & Synchro NTP ==="));
+  sendAT("AT");
+  sendAT("ATE0");
+  sendAT("AT+CPIN?");
+  
+  // 1. Configuration de l'APN Free et activation de la data
+  sendAT("AT+CGDCONT=1,\"IP\",\"free\"");
+  sendAT("AT+CGACT=1,1", 5000); // Active le profil data 1
+
+  // 2. Configuration du serveur NTP (pool.ntp.org) et fuseau horaire 
+  // (Le deuxième paramètre est en quarts d'heure : 36 = +9h, mettez 4 pour +1h en France heure d'hiver)
+  sendAT("AT+CNTP=\"pool.ntp.org\",4");
+  
+  // 3. Lancement de la synchronisation NTP
+  sendAT("AT+CNTP", 5000);
+  
+  // 4. Vérification de l'heure obtenue
+  delay(2000);
+  sendAT("AT+CCLK?");
+}
+
+void loop() {
+  // Synchronisation périodique optionnelle toutes les 5 minutes
+  if (millis() - lastSyncTime >= syncInterval) {
+    lastSyncTime = millis();
+    Serial.println(F("--- Actualisation périodique de l'heure NTP ---"));
+    sendAT("AT+CNTP", 5000);
+    delay(2000);
+    sendAT("AT+CCLK?");
+  }
+
+  // Passerelle pour le moniteur série
+  while (Serial.available()) modem.write(Serial.read());
+  while (modem.available()) Serial.write(modem.read());
+}
