@@ -9,4 +9,6 @@ void horlogeAjouterSecondes(unsigned long s);  // à appeler après chaque somme
 bool horlogeValide();                 // false tant qu'aucune synchro n'a réussi
 long horlogeSecondesDepuisMinuit();
 bool horlogeSynchroNecessaire();      // true si l'heure est inconnue ou trop ancienne
-bool envoyerSms(const char *const numeros[], int nombre, const char *texte);
+bool modemOuvrirSms();                                    // allume, attend le réseau, mode texte
+bool modemEnvoyerSms(const char *numero, const char *texte);
+void modemFermerSms();                                    // éteint

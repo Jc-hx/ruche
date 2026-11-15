@@ -14,3 +14,4 @@ void construireAlerte(char *texte, size_t taille, Variation sens, int batteriePc
 void envoyerRapport(bool quotidien);
 bool rapportDejaEnvoye();
 void memoriserRapportEnvoye(bool envoye);
+void envoyerInitialisation();

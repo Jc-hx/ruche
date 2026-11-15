@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include "config.h"
 #include "scale.h"
+#include "modem.h"
 #include "rapport.h"
 #include "users.h"
 #include "utils.h"
@@ -166,6 +167,22 @@ void envoyerRapport(bool quotidien) {
   construireDetails(texte, sizeof(texte), -1);   // -1 = signal inconnu pour l'instant
   envoyerATous(texte);
   if (quotidien) archiverRapportQuotidien();
+}
+
+void envoyerInitialisation() {
+  char texte[161];
+  int batteriePct = mesureBatterie();
+
+  if (horlogeValide()) {
+    long s = horlogeSecondesDepuisMinuit();
+    snprintf(texte, sizeof(texte), "INITIALISATION RUCHE\nHeure %02d:%02d\nBatterie %d%%\nRedemarrages %d",
+             (int)(s / SECONDES_PAR_HEURE), (int)((s % SECONDES_PAR_HEURE) / 60),
+             batteriePct, historique.nbRedemarrages);
+  } else {
+    snprintf(texte, sizeof(texte), "INITIALISATION RUCHE\nHeure inconnue\nBatterie %d%%\nRedemarrages %d",
+             batteriePct, historique.nbRedemarrages);
+  }
+  envoyerATous(texte);
 }
 
 bool rapportDejaEnvoye() {

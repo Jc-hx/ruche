@@ -8,6 +8,21 @@
 #include "rapport.h"
 #include "utils.h"
 
+#if TEST_NITZ
+#include <SoftwareSerial.h>
+static SoftwareSerial modemTest(MODEM_RX, MODEM_TX);
+
+static void commandeAT(const char *commande, unsigned long attenteMs = 1000) {
+  Serial.print(F("> ")); Serial.println(commande);
+  modemTest.println(commande);
+  unsigned long debut = millis();
+  while (millis() - debut < attenteMs) {
+    while (modemTest.available()) Serial.write(modemTest.read());
+  }
+  Serial.println();
+}
+#endif
+
 static long secondesDepuisMesure = MESURE_PERIODE_S;   // mesure dès le démarrage
 static bool rapportEnvoye;
 static bool synchroAvantEnvoiFaite = false;
@@ -48,6 +63,12 @@ void setup() {
   initialiserCapteursMasse();
   initialiserRapport();
   rapportEnvoye = rapportDejaEnvoye();
+
+  #if !(TEST_CAPTEURS || TEST_BATTERIE || TEST_HORLOGE || TEST_NITZ || TEST_RAPPORT || TEST_SMS)
+    bipper();                   // les 3 bips du démarrage, comme avant
+    synchroniserHeure();        // l'heure doit être connue avant le message
+    envoyerInitialisation();
+  #endif
 }
 
 void loop() {
@@ -61,17 +82,44 @@ void loop() {
   delay(5000);
 
 #elif TEST_HORLOGE
-  modemAllumer();
-  bool ok = modemSynchroniserHeure();
-  modemEteindre();
+  static int numeroEssai = 0;
+  numeroEssai++;
+
+  unsigned long debut = millis();
+  bool heureRecue = synchroniserHeure();
+  unsigned long dureeS = (millis() - debut) / 1000;
+
   long s = horlogeSecondesDepuisMinuit();
-  Serial.print(F("Synchro : ")); Serial.println(ok ? F("OK") : F("ECHEC"));
+  Serial.print(F("Essai ")); Serial.print(numeroEssai);
+  Serial.print(F(" : ")); Serial.print(heureRecue ? F("OK") : F("ECHEC"));
+  Serial.print(F(" en ")); Serial.print(dureeS); Serial.println(F(" s"));
   Serial.print(F("Heure : "));
   Serial.print(s / 3600); Serial.print(':');
   Serial.print((s % 3600) / 60); Serial.print(':');
   Serial.println(s % 60);
-  delay(8000);
-  horlogeAjouterSecondes(8);   // simule un sommeil de 8 s
+  Serial.println();
+
+  delay(10000);
+
+#elif TEST_NITZ
+  const long vitesses[] = {9600, 115200};
+  pinMode(MODEM_PWR, OUTPUT);
+  digitalWrite(MODEM_PWR, LOW);          // vraie coupure
+  delay(3000);
+  digitalWrite(MODEM_PWR, HIGH);
+  delay(5000);
+
+  for (int i = 0; i < 2; i++) {
+    Serial.print(F("=== Vitesse ")); Serial.println(vitesses[i]);
+    modemTest.end();
+    modemTest.begin(vitesses[i]);
+    commandeAT("AT", 1500);
+    commandeAT("AT", 1500);
+  }
+
+  digitalWrite(MODEM_PWR, LOW);
+  Serial.println(F("=== Fin ==="));
+  while (true) {}
 
 #elif TEST_RAPPORT
   mesureMasse();

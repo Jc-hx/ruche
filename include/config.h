@@ -7,9 +7,10 @@
 /* ---------- Mode de test (un seul à 1 à la fois) ---------- */
 #define TEST_CAPTEURS   0   // affiche les masses toutes les 5 s
 #define TEST_BATTERIE   0   // affiche le pourcentage de batterie
-#define TEST_HORLOGE    1   // synchro NTP puis affichage de l'heure
+#define TEST_HORLOGE    0   // synchro NITZ puis affichage de l'heure
 #define TEST_RAPPORT    0   // affiche le texte des SMS (sans les envoyer)
 #define TEST_SMS        0   // envoi d'un sms à tout le monde
+#define TEST_NITZ       0   // 
 
 /* Bouton */
 #define buttonPin 2
@@ -47,15 +48,16 @@
 #define MODEM_RX 10
 #define MODEM_TX 9
 #define MODEM_PWR 3
-#define MODEM_BAUD 115200
+#define MODEM_BAUD 9600
 #define MODEM_APN "free"
 #define SECONDES_PAR_JOUR 86400L
 #define SECONDES_PAR_HEURE 3600L
 #define SYNC_INTERVALLE_S 2 * SECONDES_PAR_HEURE    // resynchroniser toutes les 2h
 #define SYNC_RETRY_S 3600UL                         // après un échec, réessayer dans 1h
 #define HEURE_SMS_QUOTIDIEN 18                      // Heure d'envoi du SMS
-#define MINUTE_SMS_QUOTIDIEN 0
+#define MINUTE_SMS_QUOTIDIEN 0                      // Minute d'envoi du SMS
 #define SECOURS_DELAI_S 86400L                      // sans heure valide, envoyer le rapport toutes les 24 h
+#define HEURE_BONSOIR  17                           // à partir de cette heure : "Bonsoir" au lieu de "Bonjour"
 
 /* Buzzer */
 #define buzzerPin 11
