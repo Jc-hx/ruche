@@ -8,10 +8,11 @@ struct Mesure {
   float totalKg;
 };
 
-enum Variation { STABLE, HAUSSE, BAISSE };
+enum Variation { STABLE, HAUSSE, BAISSE, ERREUR };
 
 extern Mesure mesureActuelle;
 extern Mesure mesurePrecedente;
+extern Mesure mesureAvantAlerte;
 extern Mesure mesuresConfirmation[ALERT_CONFIRMATIONS];
 
 // Fonctions principales du module

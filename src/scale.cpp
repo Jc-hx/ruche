@@ -11,6 +11,7 @@ static const long  OFFSETS[NB_CAPTEURS]      = {OFFSET_AG, OFFSET_ARG, OFFSET_AR
 
 Mesure mesureActuelle;
 Mesure mesurePrecedente;
+Mesure mesureAvantAlerte;
 Mesure mesuresConfirmation[ALERT_CONFIRMATIONS];
 
 static void reveillerCapteurs() {
@@ -22,12 +23,14 @@ static void endormirCapteurs() {
   for (int i = 0; i < NB_CAPTEURS; i++) hx711[i].power_down();
 }
 
-static void lireMasses(Mesure &m) {
+static bool lireMasses(Mesure &m) {
   m.totalKg = 0;
   for (int i = 0; i < NB_CAPTEURS; i++) {
+    if (!hx711[i].wait_ready_timeout(1000)) return false;   // capteur muet après 1 s
     m.masseKg[i] = hx711[i].get_units(nombreMesuresMasse);
     m.totalKg += m.masseKg[i];
   }
+  return true;
 }
 
 static Variation detecterVariation(const Mesure &avant, const Mesure &apres) {
@@ -47,29 +50,40 @@ void initialiserCapteursMasse() {
   }
   // Mesure de référence au démarrage
   reveillerCapteurs();
-  lireMasses(mesurePrecedente);
+  if (!lireMasses(mesurePrecedente)) {
+    endormirCapteurs();
+    Serial.println("ERREUR : un capteur ne répond pas");
+  }
   endormirCapteurs();
 }
 
 Variation mesureMasse() {
   Serial.println("Mesure de masse");
   reveillerCapteurs();
-  lireMasses(mesureActuelle);
+  if (!lireMasses(mesureActuelle)) {
+    endormirCapteurs();
+    return ERREUR;
+  }
+  mesureAvantAlerte = mesurePrecedente;
 
   Variation sens = detecterVariation(mesurePrecedente, mesureActuelle);
   int nbConfirmations = 0;
 
   // Variation détectée : mesure supplementaires
-  if (sens != 0) {
-    while (nbConfirmations < ALERT_CONFIRMATIONS) {
-      delay(ALERT_CONFIRM_DELAY);
-      lireMasses(mesuresConfirmation[nbConfirmations]);
-      nbConfirmations++;
-      if (detecterVariation(mesurePrecedente, mesuresConfirmation[nbConfirmations - 1]) != sens) {
-        sens = STABLE;   // fausse alerte : on arrête
-        break;
-      }
+  while (sens != STABLE && nbConfirmations < ALERT_CONFIRMATIONS) {
+    delay(ALERT_CONFIRM_DELAI);
+    Mesure &confirmation = mesuresConfirmation[nbConfirmations];
+    if (!lireMasses(confirmation)) {
+      sens = ERREUR;
+      break;
     }
+    nbConfirmations++;
+    if (detecterVariation(mesurePrecedente, confirmation) != sens) sens = STABLE;
+  }
+
+  if (sens == ERREUR) {
+    endormirCapteurs();
+    return ERREUR;
   }
 
   // La dernière mesure faite devient la référence du prochain cycle
@@ -90,7 +104,11 @@ Variation testerCapteursEtVariations() {
   reveillerCapteurs();
 
   // Lecture directe des poids capteur par capteur
-  lireMasses(mesureActuelle);
+  if (!lireMasses(mesureActuelle)) {
+    Serial.println("ERREUR : un capteur ne répond pas");
+    endormirCapteurs();
+    return ERREUR;
+  }
 
   Serial.print("Masse AG  : "); Serial.println(mesureActuelle.masseKg[0]);
   Serial.print("Masse ArG : "); Serial.println(mesureActuelle.masseKg[1]);
